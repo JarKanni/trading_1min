@@ -4417,11 +4417,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/peachy/trading/sisu/sisu.csproj",
+      "projectUniqueName": "/home/trading/sisu/sisu.csproj",
       "projectName": "sisu",
-      "projectPath": "/home/peachy/trading/sisu/sisu.csproj",
+      "projectPath": "/home/trading/sisu/sisu.csproj",
       "packagesPath": "/home/peachy/.nuget/packages/",
-      "outputPath": "/home/peachy/trading/sisu/obj/",
+      "outputPath": "/home/trading/sisu/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/peachy/.nuget/NuGet/NuGet.Config"

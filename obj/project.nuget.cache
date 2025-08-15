@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "YhZgmyX/fpg=",
+  "dgSpecHash": "r02hJv2LRDM=",
   "success": true,
-  "projectFilePath": "/home/peachy/trading/sisu/sisu.csproj",
+  "projectFilePath": "/home/trading/sisu/sisu.csproj",
   "expectedPackageFiles": [
     "/home/peachy/.nuget/packages/binance.net/11.4.0/binance.net.11.4.0.nupkg.sha512",
     "/home/peachy/.nuget/packages/bitfinex.net/9.4.0/bitfinex.net.9.4.0.nupkg.sha512",
