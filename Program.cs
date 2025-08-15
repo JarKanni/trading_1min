@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using CryptoClients.Net;
 using CryptoClients.Net.Interfaces;
 using CryptoExchange.Net.SharedApis;
@@ -14,21 +15,34 @@ var symbols = new[]
     new { Name = "ADA", Symbol = new SharedSymbol(TradingMode.Spot, "ADA", "USDT") }
 };
 
-Console.WriteLine("==============================================");
-Console.WriteLine($"Crypto Trading      >>-----<<      {DateTime.Now:h:mm:sstt}");
-Console.WriteLine("==============================================");
-Console.WriteLine("Coin  |     Low     |     Last    |    High");
-Console.WriteLine("------|-------------|-------------|-----------");
+Console.WriteLine("Press Ctrl+C to stop...");
+Console.WriteLine();
 
-foreach (var crypto in symbols)
+while (true)
 {
-    var results = await client.GetSpotTickerAsync(new GetTickerRequest(crypto.Symbol), new[] { "Kucoin" });
-   
-    foreach (var result in results)
+    Console.Clear();
+    
+    Console.WriteLine("===============================================");
+    Console.WriteLine($"    Crypto Trading     >>-----<<     {DateTime.Now:h:mm:sstt}");
+    Console.WriteLine("===============================================");
+    Console.WriteLine(" Coin |     Low     |     Last    |    High");
+    Console.WriteLine("------|-------------|-------------|------------");
+
+    foreach (var crypto in symbols)
     {
-        if (result.Success)
-            Console.WriteLine($"{crypto.Name,-5} | ${result.Data.LowPrice,10:F2} | ${result.Data.LastPrice,10:F2} | ${result.Data.HighPrice,9:F2}");
-        else
-            Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-9}");
+        var results = await client.GetSpotTickerAsync(new GetTickerRequest(crypto.Symbol), new[] { "Kucoin" });
+       
+        foreach (var result in results)
+        {
+            if (result.Success)
+                Console.WriteLine($"{crypto.Name,-5} | ${result.Data.LowPrice,10:F2} | ${result.Data.LastPrice,10:F2} | ${result.Data.HighPrice,10:F2}");
+            else
+                Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-10}");
+        }
     }
+    
+    Console.WriteLine();
+    Console.WriteLine("Press Ctrl+C to stop...");
+    
+    await Task.Delay(20000); // Wait 20 seconds
 }
