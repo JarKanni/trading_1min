@@ -4412,24 +4412,31 @@
     ]
   },
   "packageFolders": {
-    "/home/peachy/.nuget/packages/": {}
+    "C:\\Users\\jarka\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/trading/sisu/sisu.csproj",
+      "projectUniqueName": "X:\\trading\\sisu\\sisu.csproj",
       "projectName": "sisu",
-      "projectPath": "/home/trading/sisu/sisu.csproj",
-      "packagesPath": "/home/peachy/.nuget/packages/",
-      "outputPath": "/home/trading/sisu/obj/",
+      "projectPath": "X:\\trading\\sisu\\sisu.csproj",
+      "packagesPath": "C:\\Users\\jarka\\.nuget\\packages\\",
+      "outputPath": "X:\\trading\\sisu\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "/home/peachy/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\jarka\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4447,7 +4454,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net8.0": {
@@ -4474,7 +4482,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.413/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

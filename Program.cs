@@ -5,31 +5,30 @@ using CryptoExchange.Net.SharedApis;
 using CryptoExchange.Net.Objects;
 
 var client = new ExchangeRestClient();
-var exchanges = new[] { "OKX", "Kucoin", "CoinEx" };
-
 var symbols = new[]
 {
-    new { Name = "BTC/USDT", Symbol = new SharedSymbol(TradingMode.Spot, "BTC", "USDT") },
-    new { Name = "ETH/USDT", Symbol = new SharedSymbol(TradingMode.Spot, "ETH", "USDT") },
-    new { Name = "SOL/USDT", Symbol = new SharedSymbol(TradingMode.Spot, "SOL", "USDT") },
-    new { Name = "ADA/USDT", Symbol = new SharedSymbol(TradingMode.Spot, "ADA", "USDT") }
+    new { Name = "BTC", Symbol = new SharedSymbol(TradingMode.Spot, "BTC", "USDT") },
+    new { Name = "ETH", Symbol = new SharedSymbol(TradingMode.Spot, "ETH", "USDT") },
+    new { Name = "XRP", Symbol = new SharedSymbol(TradingMode.Spot, "XRP", "USDT") },
+    new { Name = "SOL", Symbol = new SharedSymbol(TradingMode.Spot, "SOL", "USDT") },
+    new { Name = "ADA", Symbol = new SharedSymbol(TradingMode.Spot, "ADA", "USDT") }
 };
 
-Console.WriteLine("================================");
-Console.WriteLine($"Crypto Trading - {DateTime.Now:h:mm:sstt}");
-Console.WriteLine("================================");
+Console.WriteLine("==============================================");
+Console.WriteLine($"Crypto Trading      >>-----<<      {DateTime.Now:h:mm:sstt}");
+Console.WriteLine("==============================================");
+Console.WriteLine("Coin  |     Low     |     Last    |    High");
+Console.WriteLine("------|-------------|-------------|-----------");
 
 foreach (var crypto in symbols)
 {
-    var results = await client.GetSpotTickerAsync(new GetTickerRequest(crypto.Symbol), exchanges);
-    
-    Console.WriteLine($"{crypto.Name}:");
+    var results = await client.GetSpotTickerAsync(new GetTickerRequest(crypto.Symbol), new[] { "Kucoin" });
+   
     foreach (var result in results)
     {
         if (result.Success)
-            Console.WriteLine($"{result.Exchange}: ${result.Data.LastPrice:F2}");
+            Console.WriteLine($"{crypto.Name,-5} | ${result.Data.LowPrice,10:F2} | ${result.Data.LastPrice,10:F2} | ${result.Data.HighPrice,9:F2}");
         else
-            Console.WriteLine($"{result.Exchange} error: {result.Error}");
+            Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-9}");
     }
-    Console.WriteLine(); // Empty line between symbols
-};
+}
