@@ -8,7 +8,8 @@
     ".NETCoreApp,Version=v8.0": {
       "sisu/1.0.0": {
         "dependencies": {
-          "CryptoClients.Net": "3.6.0"
+          "CryptoClients.Net": "3.6.0",
+          "Kraken.Net": "4.5.0.30"
         },
         "runtime": {
           "sisu.dll": {}
@@ -90,6 +91,25 @@
           "lib/net8.0/CoinW.Net.dll": {
             "assemblyVersion": "1.1.0.0",
             "fileVersion": "1.1.0.0"
+          }
+        }
+      },
+      "Common.Logging/3.1.0": {
+        "dependencies": {
+          "Common.Logging.Core": "3.1.0"
+        },
+        "runtime": {
+          "lib/net40/Common.Logging.dll": {
+            "assemblyVersion": "3.1.0.0",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "Common.Logging.Core/3.1.0": {
+        "runtime": {
+          "lib/net40/Common.Logging.Core.dll": {
+            "assemblyVersion": "3.1.0.0",
+            "fileVersion": "0.0.0.0"
           }
         }
       },
@@ -207,6 +227,14 @@
           }
         }
       },
+      "IPNetwork/1.3.1": {
+        "runtime": {
+          "lib/LukeSkywalker.IPNetwork.dll": {
+            "assemblyVersion": "1.3.1.0",
+            "fileVersion": "1.3.1.0"
+          }
+        }
+      },
       "JK.BingX.Net/2.4.0": {
         "dependencies": {
           "CryptoExchange.Net": "9.4.0"
@@ -296,6 +324,12 @@
             "assemblyVersion": "5.1.0.0",
             "fileVersion": "5.1.0.0"
           }
+        }
+      },
+      "Kraken.Net/4.5.0.30": {
+        "dependencies": {
+          "Common.Logging": "3.1.0",
+          "IPNetwork": "1.3.1"
         }
       },
       "KrakenExchange.Net/6.4.0": {
@@ -855,6 +889,20 @@
       "path": "coinw.net/1.1.0",
       "hashPath": "coinw.net.1.1.0.nupkg.sha512"
     },
+    "Common.Logging/3.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-76/u/5cRBXZVbAubk5kyhKVj4fPZ2Jlgvyflf5iNd4fkqlrO0F9JjMAzg8PGALzdLOVpLxT0EFIutAcPyGGMZg==",
+      "path": "common.logging/3.1.0",
+      "hashPath": "common.logging.3.1.0.nupkg.sha512"
+    },
+    "Common.Logging.Core/3.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-M2FPYzqqIOjNcPwWixjoThmERoCbgYNIo67GFUARKJSVoBdD01gIgJI0Lzw39RUNsrQdf93ixqfZ7oc1FXqoIw==",
+      "path": "common.logging.core/3.1.0",
+      "hashPath": "common.logging.core.3.1.0.nupkg.sha512"
+    },
     "Crc32.NET/1.2.0": {
       "type": "package",
       "serviceable": true,
@@ -911,6 +959,13 @@
       "path": "hyperliquid.net/2.7.0",
       "hashPath": "hyperliquid.net.2.7.0.nupkg.sha512"
     },
+    "IPNetwork/1.3.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-oUQ4SJ0LtCI5ByW5atwNQHIWldTODWq4vmqprDf9pxNaP4qv9nIOxZ3r815IHZ5cPS8JTws86eIaulTJ17H8vg==",
+      "path": "ipnetwork/1.3.1",
+      "hashPath": "ipnetwork.1.3.1.nupkg.sha512"
+    },
     "JK.BingX.Net/2.4.0": {
       "type": "package",
       "serviceable": true,
@@ -966,6 +1021,13 @@
       "sha512": "sha512-gUP5iRRJ/O62nxp5nNQ2MuvttpWBl1b2izHyr3tL3dOlSM38U9cLGdyL5UyTX2YPAc8JOFt0zhZwzEfQiH8BJw==",
       "path": "jose-jwt/5.1.0",
       "hashPath": "jose-jwt.5.1.0.nupkg.sha512"
+    },
+    "Kraken.Net/4.5.0.30": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-LwTm8Oc65ryh+kKMjtojUHekcVSWKB3Kav7LaopgoIZo/MVcLIAKuSw5K8f1lAD8LPY1bhdaAJV83girhdcyWg==",
+      "path": "kraken.net/4.5.0.30",
+      "hashPath": "kraken.net.4.5.0.30.nupkg.sha512"
     },
     "KrakenExchange.Net/6.4.0": {
       "type": "package",

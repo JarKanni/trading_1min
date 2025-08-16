@@ -116,6 +116,35 @@
           }
         }
       },
+      "Common.Logging/3.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Common.Logging.Core": "3.1.0"
+        },
+        "compile": {
+          "lib/net40/Common.Logging.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net40/Common.Logging.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "Common.Logging.Core/3.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Common.Logging.Core.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net40/Common.Logging.Core.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
       "Crc32.NET/1.2.0": {
         "type": "package",
         "dependencies": {
@@ -270,6 +299,15 @@
           }
         }
       },
+      "IPNetwork/1.3.1": {
+        "type": "package",
+        "compile": {
+          "lib/LukeSkywalker.IPNetwork.dll": {}
+        },
+        "runtime": {
+          "lib/LukeSkywalker.IPNetwork.dll": {}
+        }
+      },
       "JK.BingX.Net/2.4.0": {
         "type": "package",
         "dependencies": {
@@ -395,6 +433,19 @@
         },
         "runtime": {
           "lib/netstandard2.1/jose-jwt.dll": {}
+        }
+      },
+      "Kraken.Net/4.5.0.30": {
+        "type": "package",
+        "dependencies": {
+          "Common.Logging": "3.1.0",
+          "IPNetwork": "1.3.1"
+        },
+        "compile": {
+          "lib/net40/Kraken.Net.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Kraken.Net.dll": {}
         }
       },
       "KrakenExchange.Net/6.4.0": {
@@ -1521,6 +1572,43 @@
         "lib/netstandard2.1/CoinW.Net.xml"
       ]
     },
+    "Common.Logging/3.1.0": {
+      "sha512": "76/u/5cRBXZVbAubk5kyhKVj4fPZ2Jlgvyflf5iNd4fkqlrO0F9JjMAzg8PGALzdLOVpLxT0EFIutAcPyGGMZg==",
+      "type": "package",
+      "path": "common.logging/3.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "common.logging.3.1.0.nupkg.sha512",
+        "common.logging.nuspec",
+        "lib/net35/Common.Logging.dll",
+        "lib/net35/Common.Logging.pdb",
+        "lib/net35/Common.Logging.xml",
+        "lib/net40/Common.Logging.dll",
+        "lib/net40/Common.Logging.pdb",
+        "lib/net40/Common.Logging.xml"
+      ]
+    },
+    "Common.Logging.Core/3.1.0": {
+      "sha512": "M2FPYzqqIOjNcPwWixjoThmERoCbgYNIo67GFUARKJSVoBdD01gIgJI0Lzw39RUNsrQdf93ixqfZ7oc1FXqoIw==",
+      "type": "package",
+      "path": "common.logging.core/3.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "common.logging.core.3.1.0.nupkg.sha512",
+        "common.logging.core.nuspec",
+        "lib/net35/Common.Logging.Core.dll",
+        "lib/net35/Common.Logging.Core.pdb",
+        "lib/net35/Common.Logging.Core.xml",
+        "lib/net40/Common.Logging.Core.dll",
+        "lib/net40/Common.Logging.Core.pdb",
+        "lib/net40/Common.Logging.Core.xml",
+        "lib/portable-win+net40+sl40+wp7/Common.Logging.Core.XML",
+        "lib/portable-win+net40+sl40+wp7/Common.Logging.Core.dll",
+        "lib/portable-win+net40+sl40+wp7/Common.Logging.Core.pdb"
+      ]
+    },
     "Crc32.NET/1.2.0": {
       "sha512": "wNW/huzolu8MNKUnwCVKxjfAlCFpeI8AZVfF46iAWJ1+P6bTU1AZct7VAkDDEjgeeTJCVTkGZaD6jSd/fOiUkA==",
       "type": "package",
@@ -1683,6 +1771,19 @@
         "lib/netstandard2.0/HyperLiquid.Net.xml",
         "lib/netstandard2.1/HyperLiquid.Net.dll",
         "lib/netstandard2.1/HyperLiquid.Net.xml"
+      ]
+    },
+    "IPNetwork/1.3.1": {
+      "sha512": "oUQ4SJ0LtCI5ByW5atwNQHIWldTODWq4vmqprDf9pxNaP4qv9nIOxZ3r815IHZ5cPS8JTws86eIaulTJ17H8vg==",
+      "type": "package",
+      "path": "ipnetwork/1.3.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "ipnetwork.1.3.1.nupkg.sha512",
+        "ipnetwork.nuspec",
+        "lib/LukeSkywalker.IPNetwork.dll",
+        "lib/LukeSkywalker.IPNetwork.pdb"
       ]
     },
     "JK.BingX.Net/2.4.0": {
@@ -1848,6 +1949,18 @@
         "lib/net472/jose-jwt.dll",
         "lib/netstandard1.4/jose-jwt.dll",
         "lib/netstandard2.1/jose-jwt.dll"
+      ]
+    },
+    "Kraken.Net/4.5.0.30": {
+      "sha512": "LwTm8Oc65ryh+kKMjtojUHekcVSWKB3Kav7LaopgoIZo/MVcLIAKuSw5K8f1lAD8LPY1bhdaAJV83girhdcyWg==",
+      "type": "package",
+      "path": "kraken.net/4.5.0.30",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "kraken.net.4.5.0.30.nupkg.sha512",
+        "kraken.net.nuspec",
+        "lib/net40/Kraken.Net.dll"
       ]
     },
     "KrakenExchange.Net/6.4.0": {
@@ -4408,35 +4521,29 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
-      "CryptoClients.Net >= 3.6.0"
+      "CryptoClients.Net >= 3.6.0",
+      "Kraken.Net >= 4.5.0.30"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\jarka\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "/home/peachy/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "X:\\trading\\sisu\\sisu.csproj",
+      "projectUniqueName": "/home/trading/sisu/sisu.csproj",
       "projectName": "sisu",
-      "projectPath": "X:\\trading\\sisu\\sisu.csproj",
-      "packagesPath": "C:\\Users\\jarka\\.nuget\\packages\\",
-      "outputPath": "X:\\trading\\sisu\\obj\\",
+      "projectPath": "/home/trading/sisu/sisu.csproj",
+      "packagesPath": "/home/peachy/.nuget/packages/",
+      "outputPath": "/home/trading/sisu/obj/",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\jarka\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "/home/peachy/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4454,8 +4561,7 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      },
-      "SdkAnalysisLevel": "9.0.300"
+      }
     },
     "frameworks": {
       "net8.0": {
@@ -4464,6 +4570,10 @@
           "CryptoClients.Net": {
             "target": "Package",
             "version": "[3.6.0, )"
+          },
+          "Kraken.Net": {
+            "target": "Package",
+            "version": "[4.5.0.30, )"
           }
         },
         "imports": [
@@ -4482,8 +4592,50 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.413/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Common.Logging 3.1.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Common.Logging",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Common.Logging.Core 3.1.0' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Common.Logging.Core",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'IPNetwork 1.3.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0'. This package may not be fully compatible with your project.",
+      "libraryId": "IPNetwork",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Kraken.Net 4.5.0.30' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0'. This package may not be fully compatible with your project.",
+      "libraryId": "Kraken.Net",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }
