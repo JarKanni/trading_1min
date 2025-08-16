@@ -4638,9 +4638,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/trading/1min/sisu.csproj",
-      "projectName": "sisu",
-      "projectPath": "/home/trading/1min/sisu.csproj",
+      "projectUniqueName": "/home/trading/1min/1min.csproj",
+      "projectName": "1min",
+      "projectPath": "/home/trading/1min/1min.csproj",
       "packagesPath": "/home/peachy/.nuget/packages/",
       "outputPath": "/home/trading/1min/obj/",
       "projectStyle": "PackageReference",
