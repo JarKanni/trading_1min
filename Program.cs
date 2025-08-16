@@ -1,300 +1,441 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using CryptoClients.Net;
-using CryptoClients.Net.Interfaces;
-using CryptoExchange.Net.SharedApis;
-using CryptoExchange.Net.Objects;
-using CryptoExchange.Net.Authentication;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
-var client = new ExchangeRestClient();
+namespace TradingMonitor;
 
-// Print enough newlines to "clear" the visible area
-Console.WriteLine(new string('\n', 20));
-
-Console.WriteLine("===============================================");
-Console.WriteLine("        1-Minute Ticker-Based Monitor");
-Console.WriteLine("===============================================");
-Console.WriteLine();
-
-// Note: Kraken uses USD instead of USDT for most trading pairs
-var symbols = new[]
+public class PriceSample
 {
-    new { Name = "BTC", Symbol = new SharedSymbol(TradingMode.Spot, "BTC", "USD") },
-    new { Name = "ETH", Symbol = new SharedSymbol(TradingMode.Spot, "ETH", "USD") },
-    new { Name = "XRP", Symbol = new SharedSymbol(TradingMode.Spot, "XRP", "USD") },
-    new { Name = "LINK", Symbol = new SharedSymbol(TradingMode.Spot, "LINK", "USD") },
-    new { Name = "ALGO", Symbol = new SharedSymbol(TradingMode.Spot, "ALGO", "USD") },
-    new { Name = "BAT", Symbol = new SharedSymbol(TradingMode.Spot, "BAT", "USD") }
-};
-
-var logFile = "/home/trading/1min/prices.csv";
-
-// Create CSV header if file doesn't exist
-if (!File.Exists(logFile))
-{
-    await File.WriteAllTextAsync(logFile, "timestamp,coin,open,low,high,close,percent_change,volatility,spread,samples\n");
+    public DateTime Timestamp { get; set; }
+    public decimal Price { get; set; }
+    public string Source { get; set; } = "API";
 }
 
-// Dictionary to store price samples for each coin within the current minute
-var priceData = new Dictionary<string, List<(DateTime Time, decimal Price)>>();
-
-// Dictionary to store the current minute's OHLC data
-var currentBars = new Dictionary<string, (decimal Open, decimal Low, decimal High, decimal Close, DateTime StartTime, int SampleCount)>();
-
-// Load initial data from existing CSV if available - get last 4 samples per coin
-if (File.Exists(logFile))
+public class MinuteBar
 {
-    try
+    public DateTime Minute { get; set; }
+    public decimal Open { get; set; }
+    public decimal High { get; set; }
+    public decimal Low { get; set; }
+    public decimal Close { get; set; }
+    public List<PriceSample> Samples { get; set; } = [];
+    
+    public decimal PercentChange => Open != 0 ? ((Close - Open) / Open) * 100 : 0;
+    public decimal Volatility => CalculateVolatility();
+    public decimal Spread => High - Low;
+    public int SampleCount => Samples.Count;
+
+    private decimal CalculateVolatility()
     {
-        var lines = File.ReadAllText(logFile).Split('\n');
-        var dataLines = new List<string>();
+        if (Samples.Count < 2) return 0;
         
-        for (int i = 1; i < lines.Length; i++) // Skip header
+        var prices = Samples.Select(s => s.Price).ToList();
+        var mean = prices.Average();
+        var variance = prices.Sum(p => (p - mean) * (p - mean)) / prices.Count;
+        var stdDev = (decimal)Math.Sqrt((double)variance);
+        
+        return mean != 0 ? (stdDev / mean) * 100 : 0;
+    }
+
+    public void AddSample(decimal price, DateTime timestamp)
+    {
+        var sample = new PriceSample { Price = price, Timestamp = timestamp };
+        
+        if (Samples.Count == 0)
         {
-            if (!string.IsNullOrWhiteSpace(lines[i]))
-            {
-                dataLines.Add(lines[i]);
-            }
+            Open = price;
+            High = price;
+            Low = price;
+        }
+        else
+        {
+            if (price > High) High = price;
+            if (price < Low) Low = price;
         }
         
-        if (dataLines.Count > 0)
-        {
-            // Get the last 50 entries to ensure we have enough data
-            var recentLines = dataLines.TakeLast(50).ToList();
-            
-            // Find the most recent minute that has data
-            DateTime? latestMinute = null;
-            for (int i = recentLines.Count - 1; i >= 0; i--)
-            {
-                var parts = recentLines[i].Split(',');
-                if (parts.Length >= 9 && DateTime.TryParse(parts[0], out var timestamp))
-                {
-                    var minute = new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hour, timestamp.Minute, 0);
-                    latestMinute = minute;
-                    break;
-                }
-            }
-            
-            if (latestMinute.HasValue)
-            {
-                // Just get the final OHLC data for each coin from the most recent completed minute
-                for (int i = recentLines.Count - 1; i >= 0; i--)
-                {
-                    var parts = recentLines[i].Split(',');
-                    if (parts.Length >= 10 && DateTime.TryParse(parts[0], out var timestamp))
-                    {
-                        var minute = new DateTime(timestamp.Year, timestamp.Month, timestamp.Day, timestamp.Hour, timestamp.Minute, 0);
-                        
-                        if (minute == latestMinute.Value && 
-                            decimal.TryParse(parts[2], out var open) &&
-                            decimal.TryParse(parts[3], out var low) &&
-                            decimal.TryParse(parts[4], out var high) &&
-                            decimal.TryParse(parts[5], out var close) &&
-                            int.TryParse(parts[9], out var samples))
-                        {
-                            var coinName = parts[1];
-                            // Only take the entry with the highest sample count (most complete)
-                            if (!currentBars.ContainsKey(coinName) || samples > currentBars[coinName].SampleCount)
-                            {
-                                currentBars[coinName] = (open, low, high, close, latestMinute.Value, samples);
-                            }
-                        }
-                    }
-                }
-                
-                if (currentBars.Any())
-                {
-                    // Display the loaded data immediately
-                    Console.WriteLine("===============================================================");
-                    Console.WriteLine($"   Last Completed Minute: {latestMinute.Value:HH:mm}");
-                    Console.WriteLine("===============================================================");
-                    Console.WriteLine(" Coin |    Open     |     Low     |    High     |    Close    | % Change | Volatility | Spread  | Samples");
-                    Console.WriteLine("------|-------------|-------------|-------------|-------------|----------|------------|---------|--------");
-
-                    foreach (var crypto in symbols)
-                    {
-                        if (currentBars.ContainsKey(crypto.Name))
-                        {
-                            var bar = currentBars[crypto.Name];
-                            var open = bar.Open;
-                            var low = bar.Low;
-                            var high = bar.High;
-                            var close = bar.Close;
-                            var samples = bar.SampleCount;
-                            
-                            // Calculate metrics
-                            var percentChange = open != 0 ? ((close - open) / open) * 100 : 0;
-                            var volatility = open != 0 ? ((high - low) / open) * 100 : 0;
-                            var spread = high - low;
-                            
-                            Console.WriteLine($"{crypto.Name,-5} | ${open,10:F2} | ${low,10:F2} | ${high,10:F2} | ${close,10:F2} | {percentChange,7:F2}% | {volatility,9:F2}% | ${spread,7:F2} | {samples,6}");
-                        }
-                    }
-                    Console.WriteLine();
-                }
-                else
-                {
-                    Console.WriteLine("No CSV data could be loaded - starting fresh");
-                }
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error loading CSV data: {ex.Message}");
+        Close = price;
+        Samples.Add(sample);
     }
 }
 
-// Keep any loaded data - don't clear it immediately
-// currentBars.Clear(); // REMOVED - this was wiping out the CSV data!
-
-var lastDisplayTime = DateTime.MinValue;
-
-// If we loaded data from CSV, set the lastDisplayTime to that minute
-if (currentBars.Any())
+// DTOs for Kraken API responses
+public class KrakenTickerResponse
 {
-    lastDisplayTime = currentBars.Values.First().StartTime;
+    public Dictionary<string, KrakenTickerData>? result { get; set; }
+    public string[]? error { get; set; }
 }
 
-while (true)
+public class KrakenTickerData
 {
-    var now = DateTime.Now;
-    var currentMinute = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0);
-    
-    // Check if we've moved to a new minute - if so, display the completed bar and reset
-    if (lastDisplayTime != DateTime.MinValue && currentMinute > lastDisplayTime)
+    public string[]? c { get; set; } // Last trade closed array [price, lot volume]
+}
+
+public class KrakenClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _apiKey;
+    private readonly string _apiSecret;
+    private const string BaseUrl = "https://api.kraken.com";
+
+    public KrakenClient(string apiKey, string apiSecret)
     {
-        // Clear the data for the new minute
-        currentBars.Clear();
-        priceData.Clear();
+        _apiKey = apiKey;
+        _apiSecret = apiSecret;
+        _httpClient = new HttpClient();
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "TradingMonitor/1.0");
     }
-    
-    // Collect current price samples FIRST
-    foreach (var crypto in symbols)
+
+    public async Task<Dictionary<string, decimal>> GetTickerPricesAsync(string[] pairs)
     {
         try
         {
-            var results = await client.GetSpotTickerAsync(new GetTickerRequest(crypto.Symbol), new[] { "Kraken" });
+            var pairList = string.Join(",", pairs);
+            var url = $"{BaseUrl}/0/public/Ticker?pair={pairList}";
             
-            if (results.Any() && results.First().Success)
+            var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            var tickerResponse = JsonSerializer.Deserialize<KrakenTickerResponse>(content);
+            
+            if (tickerResponse?.error?.Length > 0)
             {
-                var currentPrice = results.First().Data.LastPrice ?? 0m;
-                
-                // Skip if price is 0 (invalid data)
-                if (currentPrice == 0) continue;
-                
-                var sampleTime = DateTime.Now;
-                
-                // Initialize price data for this coin if it doesn't exist
-                if (!priceData.ContainsKey(crypto.Name))
+                Console.WriteLine($"ERROR: Kraken API errors: {string.Join(", ", tickerResponse.error)}");
+                return new Dictionary<string, decimal>();
+            }
+
+            var results = new Dictionary<string, decimal>();
+            
+            if (tickerResponse?.result != null)
+            {
+                foreach (var (pair, data) in tickerResponse.result)
                 {
-                    priceData[crypto.Name] = new List<(DateTime, decimal)>();
-                }
-                
-                // Add current price sample
-                priceData[crypto.Name].Add((sampleTime, currentPrice));
-                
-                // Update or create the OHLC bar for this minute
-                if (currentBars.ContainsKey(crypto.Name))
-                {
-                    var bar = currentBars[crypto.Name];
-                    currentBars[crypto.Name] = (
-                        bar.Open,  // Keep original open
-                        Math.Min(bar.Low, currentPrice),  // Update low
-                        Math.Max(bar.High, currentPrice), // Update high
-                        currentPrice,  // Update close to current price
-                        bar.StartTime,
-                        bar.SampleCount + 1
-                    );
-                }
-                else
-                {
-                    // First sample for this coin in this minute
-                    currentBars[crypto.Name] = (
-                        currentPrice,  // Open
-                        currentPrice,  // Low
-                        currentPrice,  // High
-                        currentPrice,  // Close
-                        currentMinute, // Start time
-                        1              // Sample count
-                    );
+                    if (data?.c?.Length > 0 && decimal.TryParse(data.c[0], out var price))
+                    {
+                        results[pair] = price;
+                    }
                 }
             }
-            else
+            
+            return results;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR: Kraken API call failed: {ex.Message}");
+            return new Dictionary<string, decimal>();
+        }
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
+    }
+}
+
+public class CoinMonitor
+{
+    // Kraken symbol mapping - corrected for their actual API responses
+    private readonly Dictionary<string, string> _krakenPairs = new()
+    {
+        { "BTC", "XXBTZUSD" },  // Bitcoin on Kraken
+        { "ETH", "XETHZUSD" },  // Ethereum on Kraken  
+        { "XRP", "XXRPZUSD" },  // XRP on Kraken
+        { "LINK", "LINKUSD" },  // Chainlink on Kraken
+        { "ALGO", "ALGOUSD" },  // Algorand on Kraken
+        { "BAT", "BATUSD" }     // BAT on Kraken
+    };
+
+    private readonly KrakenClient _krakenClient;
+    private readonly ConcurrentDictionary<string, List<PriceSample>> _currentMinuteData;
+    private readonly object _displayLock = new();
+    private readonly ILogger _logger;
+    private DateTime _currentMinute;
+    private readonly Timer _samplingTimer;
+    private readonly Timer _minuteTimer;
+    private bool _isRunning = true;
+
+    public CoinMonitor()
+    {
+        using var factory = LoggerFactory.Create(builder => builder.AddConsole());
+        _logger = factory.CreateLogger<CoinMonitor>();
+        
+        // Load API credentials from environment or .env file
+        var apiKey = Environment.GetEnvironmentVariable("KRAKEN_API_KEY") ?? LoadFromEnv("KRAKEN_API_KEY");
+        var apiSecret = Environment.GetEnvironmentVariable("KRAKEN_API_SECRET") ?? LoadFromEnv("KRAKEN_API_SECRET");
+        
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiSecret))
+        {
+            Console.WriteLine("WARNING: Kraken API credentials not found. Add KRAKEN_API_KEY and KRAKEN_API_SECRET to .env file or environment variables.");
+            Console.WriteLine("For public data only, we'll continue without authentication.");
+        }
+        
+        _krakenClient = new KrakenClient(apiKey ?? "", apiSecret ?? "");
+        _currentMinuteData = new ConcurrentDictionary<string, List<PriceSample>>();
+        _currentMinute = GetCurrentMinute();
+        
+        // Initialize data structures
+        foreach (var symbol in _krakenPairs.Keys)
+        {
+            _currentMinuteData[symbol] = [];
+        }
+
+        // Sample every 5 seconds
+        _samplingTimer = new Timer(SamplePricesCallback, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        
+        // Check for minute transitions every second
+        _minuteTimer = new Timer(CheckMinuteTransition, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private static string? LoadFromEnv(string key)
+    {
+        try
+        {
+            if (!File.Exists(".env")) return null;
+            
+            var lines = File.ReadAllLines(".env");
+            foreach (var line in lines)
             {
-                // Log error for this sample
-                var errorMessage = results.FirstOrDefault()?.Error?.Message ?? "Unknown ticker error";
-                var errorLog = $"{now:yyyy-MM-dd HH:mm:ss},TICKER_ERROR,{crypto.Name},{errorMessage}\n";
-                await File.AppendAllTextAsync("/home/trading/1min/errors.log", errorLog);
+                if (line.StartsWith($"{key}="))
+                {
+                    return line.Substring(key.Length + 1).Trim();
+                }
             }
         }
         catch (Exception ex)
         {
-            // Log exception for this sample
-            var errorLog = $"{now:yyyy-MM-dd HH:mm:ss},TICKER_EXCEPTION,{crypto.Name},{ex.Message}\n";
-            await File.AppendAllTextAsync("/home/trading/1min/errors.log", errorLog);
+            Console.WriteLine($"WARNING: Error reading .env file: {ex.Message}");
         }
+        return null;
     }
-    
-    // NOW display the updated data
-    Console.WriteLine("\n\n");
-    Console.WriteLine("===============================================================");
-    Console.WriteLine($"   1-Min Ticker Bars     >>------<<          {DateTime.Now:h:mm:sstt}");
-    Console.WriteLine("===============================================================");
-    Console.WriteLine(" Coin |    Open     |     Low     |    High     |    Close    | % Change | Volatility | Spread  | Samples");
-    Console.WriteLine("------|-------------|-------------|-------------|-------------|----------|------------|---------|--------");
 
-    // Show current bars for all coins
-    foreach (var crypto in symbols)
+    private static DateTime GetCurrentMinute()
     {
-        if (currentBars.ContainsKey(crypto.Name))
+        var now = DateTime.Now;
+        return new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0);
+    }
+
+    private async void SamplePricesCallback(object? state)
+    {
+        if (!_isRunning) return;
+
+        try
         {
-            var bar = currentBars[crypto.Name];
-            var open = bar.Open;
-            var low = bar.Low;
-            var high = bar.High;
-            var close = bar.Close;
-            var samples = bar.SampleCount;
+            var timestamp = DateTime.Now;
+            var currentMinute = GetCurrentMinute();
             
-            // Calculate metrics
-            var percentChange = open != 0 ? ((close - open) / open) * 100 : 0;
-            var volatility = open != 0 ? ((high - low) / open) * 100 : 0;
-            var spread = high - low;
-            
-            // Display in table format
-            Console.WriteLine($"{crypto.Name,-5} | ${open,10:F2} | ${low,10:F2} | ${high,10:F2} | ${close,10:F2} | {percentChange,7:F2}% | {volatility,9:F2}% | ${spread,7:F2} | {samples,6}");
+            // If minute changed, don't collect data until after transition is handled
+            if (currentMinute != _currentMinute)
+                return;
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+            // Get all prices in one API call
+            var krakenPairs = _krakenPairs.Values.ToArray();
+            var priceResults = await _krakenClient.GetTickerPricesAsync(krakenPairs);
+            stopwatch.Stop();
+
+            // Process results and map back to our symbols
+            var successCount = 0;
+            foreach (var (symbol, krakenPair) in _krakenPairs)
+            {
+                if (priceResults.TryGetValue(krakenPair, out var price))
+                {
+                    _currentMinuteData[symbol].Add(new PriceSample
+                    {
+                        Price = price,
+                        Timestamp = timestamp,
+                        Source = "Kraken"
+                    });
+                    successCount++;
+                }
+            }
+
+            // Display current status
+            DisplayCurrentData();
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine($"{crypto.Name,-5} | {"--",-10} | {"--",-10} | {"--",-10} | {"--",-10} | {"--",-8} | {"--",-10} | {"--",-8} | {"0",6}");
+            await LogError($"Critical error in sampling: {ex.Message}");
         }
     }
-    
-    // Log completed minute data to CSV only when minute changes
-    if (lastDisplayTime != DateTime.MinValue && currentMinute > lastDisplayTime && currentBars.Any())
+
+    private void CheckMinuteTransition(object? state)
     {
-        var timestamp = lastDisplayTime.ToString("yyyy-MM-dd HH:mm:ss");
-        foreach (var crypto in symbols)
+        var currentMinute = GetCurrentMinute();
+        if (currentMinute != _currentMinute)
         {
-            if (currentBars.ContainsKey(crypto.Name))
+            ProcessCompletedMinute();
+            _currentMinute = currentMinute;
+        }
+    }
+
+    private void ProcessCompletedMinute()
+    {
+        Console.WriteLine($"\n===============================================================");
+        Console.WriteLine($"   Minute {_currentMinute:HH:mm} Complete - Processing Data");
+        Console.WriteLine($"===============================================================");
+
+        // Convert to minute bars and log
+        var minuteBars = new List<MinuteBar>();
+        foreach (var (symbol, samples) in _currentMinuteData)
+        {
+            if (samples.Count != 0)
             {
-                var bar = currentBars[crypto.Name];
-                var percentChange = bar.Open != 0 ? ((bar.Close - bar.Open) / bar.Open) * 100 : 0;
-                var volatility = bar.Open != 0 ? ((bar.High - bar.Low) / bar.Open) * 100 : 0;
-                var spread = bar.High - bar.Low;
-                
-                var csvLine = $"{timestamp},{crypto.Name},{bar.Open:F2},{bar.Low:F2},{bar.High:F2},{bar.Close:F2},{percentChange:F2},{volatility:F2},{spread:F2},{bar.SampleCount}\n";
-                await File.AppendAllTextAsync(logFile, csvLine);
+                var bar = new MinuteBar { Minute = _currentMinute };
+                foreach (var sample in samples.OrderBy(s => s.Timestamp))
+                {
+                    bar.AddSample(sample.Price, sample.Timestamp);
+                }
+                minuteBars.Add(bar);
             }
         }
+
+        // Log to CSV
+        LogMinuteBarsToCSV(minuteBars);
+
+        // Clear data for new minute
+        foreach (var symbol in _krakenPairs.Keys)
+        {
+            _currentMinuteData[symbol].Clear();
+        }
+        
+        Console.WriteLine($"Data cleared, now collecting for minute {GetCurrentMinute():HH:mm}\n");
     }
-    
-    // Update the last display time to current minute
-    lastDisplayTime = currentMinute;
-    
-    // Wait 15 seconds before next sample
-    await Task.Delay(15000);
+
+    private void DisplayCurrentData()
+    {
+        lock (_displayLock)
+        {
+            Console.Clear();
+            Console.WriteLine("===============================================");
+            Console.WriteLine("        5-Second Continuous Monitor (Kraken)");
+            Console.WriteLine("===============================================\n");
+
+            Console.WriteLine($"===============================================================");
+            Console.WriteLine($"   Current Minute: {_currentMinute:HH:mm}     >>------<<     {DateTime.Now:HH:mm:ss}");
+            Console.WriteLine($"===============================================================");
+            Console.WriteLine($" Coin |    Open     |     Low     |    High     |    Close    | % Change | Volatility | Spread  | Samples");
+            Console.WriteLine($"------|-------------|-------------|-------------|-------------|----------|------------|---------|--------");
+
+            foreach (var symbol in _krakenPairs.Keys)
+            {
+                var samples = _currentMinuteData[symbol];
+
+                if (samples.Count != 0)
+                {
+                    var bar = new MinuteBar();
+                    foreach (var sample in samples.OrderBy(s => s.Timestamp))
+                    {
+                        bar.AddSample(sample.Price, sample.Timestamp);
+                    }
+
+                    Console.WriteLine($"{symbol,-5} | ${bar.Open,10:F2} | ${bar.Low,10:F2} | ${bar.High,10:F2} | ${bar.Close,10:F2} | " +
+                                    $"{bar.PercentChange,7:F2}% | {bar.Volatility,9:F2}% | ${bar.Spread,6:F2} | {bar.SampleCount,7}");
+                }
+                else
+                {
+                    Console.WriteLine($"{symbol,-5} | ${"--",10} | ${"--",10} | ${"--",10} | ${"--",10} | " +
+                                    $"{"--",7} | {"--",9} | ${"--",6} | {0,7}");
+                }
+            }
+            Console.WriteLine();
+        }
+    }
+
+    private async Task LogMinuteBarsToCSV(List<MinuteBar> bars)
+    {
+        try
+        {
+            const string csvFile = "prices.csv";
+            var csvExists = File.Exists(csvFile);
+            
+            await using var writer = new StreamWriter(csvFile, append: true);
+            
+            // Write header if file doesn't exist
+            if (!csvExists)
+            {
+                await writer.WriteLineAsync("Timestamp,Symbol,Open,High,Low,Close,Volume,Samples,PercentChange,Volatility,Spread");
+            }
+
+            foreach (var bar in bars)
+            {
+                var symbol = _krakenPairs.Keys.FirstOrDefault(s => _currentMinuteData[s].Count != 0) ?? "UNKNOWN";
+                
+                await writer.WriteLineAsync($"{bar.Minute:yyyy-MM-dd HH:mm:ss},{symbol}," +
+                                          $"{bar.Open},{bar.High},{bar.Low},{bar.Close},0," +
+                                          $"{bar.SampleCount},{bar.PercentChange:F4},{bar.Volatility:F4},{bar.Spread}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await LogError($"Error writing to CSV: {ex.Message}");
+        }
+    }
+
+    private async Task LogError(string message)
+    {
+        try
+        {
+            var logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}";
+            Console.WriteLine($"ERROR: {message}");
+            await File.AppendAllTextAsync("errors.log", logEntry + Environment.NewLine);
+        }
+        catch
+        {
+            // If we can't log errors, at least print them
+            Console.WriteLine($"CRITICAL: Could not log error: {message}");
+        }
+    }
+
+    public void Stop()
+    {
+        _isRunning = false;
+        _samplingTimer?.Dispose();
+        _minuteTimer?.Dispose();
+        _krakenClient?.Dispose();
+        
+        // Process any remaining data
+        if (_currentMinuteData.Values.Any(samples => samples.Count != 0))
+        {
+            ProcessCompletedMinute();
+        }
+    }
+}
+
+class Program
+{
+    private static CoinMonitor? _monitor;
+
+    static async Task Main(string[] args)
+    {
+        Console.WriteLine("Starting Crypto Trading Monitor with Kraken...");
+        Console.WriteLine("Press Ctrl+C to stop\n");
+
+        // Handle graceful shutdown
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            e.Cancel = true;
+            Console.WriteLine("\nShutting down gracefully...");
+            _monitor?.Stop();
+            Environment.Exit(0);
+        };
+
+        try
+        {
+            _monitor = new CoinMonitor();
+            
+            // Keep the application running
+            while (true)
+            {
+                await Task.Delay(1000);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Fatal error: {ex.Message}");
+            await File.AppendAllTextAsync("errors.log", 
+                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - FATAL: {ex.Message}\n{ex.StackTrace}\n");
+        }
+    }
 }

@@ -43,21 +43,13 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "CryptoClients.Net": {
-              "target": "Package",
-              "version": "[3.6.0, )"
-            },
-            "Kraken.Net": {
-              "target": "Package",
-              "version": "[4.5.0.30, )"
-            },
             "Microsoft.Extensions.Logging": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.0, )"
             },
             "Microsoft.Extensions.Logging.Console": {
               "target": "Package",
-              "version": "[9.0.8, )"
+              "version": "[9.0.0, )"
             }
           },
           "imports": [
