@@ -7,8 +7,6 @@ using CryptoClients.Net.Interfaces;
 using CryptoExchange.Net.SharedApis;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Authentication;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 
 // Load .env file
 var envFile = "/home/trading/sisu/.env";
@@ -30,15 +28,6 @@ if (File.Exists(envFile))
 }
 
 var client = new ExchangeRestClient();
-
-// Configure file logging
-var loggerFactory = LoggerFactory.Create(builder =>
-{
-    builder.AddFile("/home/trading/sisu/logs/trading_{Date}.log")
-           .SetMinimumLevel(LogLevel.Debug);
-});
-
-client.SetLogger(loggerFactory.CreateLogger<ExchangeRestClient>());
 
 // Configure API credentials from .env file
 var apiKey = Environment.GetEnvironmentVariable("KRAKEN_API_KEY");
@@ -124,7 +113,7 @@ else if (choice == "3")
             Console.WriteLine("===============================================");
             Console.WriteLine("            Account Balance");
             Console.WriteLine("===============================================");
-            Console.WriteLine(" Coin    |     Available      |       Total");
+            Console.WriteLine("Asset    |     Available      |       Total");
             Console.WriteLine("---------|--------------------|-----------------");
             
             if (balanceResult.Any())
@@ -189,22 +178,20 @@ var logFile = "/home/trading/sisu/prices.csv";
 // Create CSV header if file doesn't exist
 if (!File.Exists(logFile))
 {
-    await File.WriteAllTextAsync(logFile, "timestamp,coin,low,last,high\n");
+    await File.WriteAllTextAsync(logFile, "timestamp,coin,low,last,high,variance\n");
 }
-
-
-
 
 while (true)
 {
     var startTime = DateTime.Now;
     var timestamp = startTime.ToString("yyyy-MM-dd HH:mm:ss");
+    
     Console.WriteLine("\n\n");
-    Console.WriteLine("===============================================");
-    Console.WriteLine($"    Crypto Trading     >>-----<<     {DateTime.Now:h:mm:sstt}");
-    Console.WriteLine("===============================================");
-    Console.WriteLine(" Coin |     Low     |     Last    |    High");
-    Console.WriteLine("------|-------------|-------------|------------");
+    Console.WriteLine("===========================================================");
+    Console.WriteLine($"    Crypto Trading     >>------<<          {DateTime.Now:h:mm:sstt}");
+    Console.WriteLine("===========================================================");
+    Console.WriteLine(" Coin |     Low     |     Last    |    High     | Variance");
+    Console.WriteLine("------|-------------|-------------|-------------|----------");
 
     foreach (var crypto in symbols)
     {
@@ -214,23 +201,30 @@ while (true)
         {
             if (result.Success)
             {
-                // Display in table format
-                Console.WriteLine($"{crypto.Name,-5} | ${result.Data.LowPrice,10:F2} | ${result.Data.LastPrice,10:F2} | ${result.Data.HighPrice,10:F2}");
+                // Calculate variance: distance from Last to average of Low and High
+                var averagePrice = (result.Data.LowPrice + result.Data.HighPrice) / 2;
+                var variance = result.Data.LastPrice - averagePrice;
                 
-                // Log to CSV file
-                var csvLine = $"{timestamp},{crypto.Name},{result.Data.LowPrice:F2},{result.Data.LastPrice:F2},{result.Data.HighPrice:F2}\n";
+                // Display in table format
+                Console.WriteLine($"{crypto.Name,-5} | ${result.Data.LowPrice,10:F2} | ${result.Data.LastPrice,10:F2} | ${result.Data.HighPrice,10:F2} | ${variance,8:F2}");
+                
+                // Log to CSV file (including variance)
+                var csvLine = $"{timestamp},{crypto.Name},{result.Data.LowPrice:F2},{result.Data.LastPrice:F2},{result.Data.HighPrice:F2},{variance:F2}\n";
                 await File.AppendAllTextAsync(logFile, csvLine);
             }
             else
             {
-                Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-10}");
+                Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-10} | {"Error",-8}");
+                
+                // Add error logging
+                var errorLog = $"{timestamp},ERROR,{crypto.Name},{result.Error?.Message ?? "Unknown error"}\n";
+                await File.AppendAllTextAsync("/home/trading/sisu/errors.log", errorLog);
             }
         }
     }
     
     Console.WriteLine();
     
-    // for 1 minute bars
     // Calculate how long the API calls took
     var elapsed = DateTime.Now - startTime;
     var remainingTime = TimeSpan.FromMinutes(1) - elapsed;
