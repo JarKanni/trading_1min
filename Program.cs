@@ -10,11 +10,8 @@ using CryptoExchange.Net.Authentication;
 
 // Load .env file
 var envFile = "/home/trading/sisu/.env";
-Console.WriteLine($"Looking for .env file at: {envFile}");
-
 if (File.Exists(envFile))
 {
-    Console.WriteLine(".env file found! Loading credentials...");
     foreach (var line in File.ReadAllLines(envFile))
     {
         if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("#") && line.Contains("="))
@@ -25,14 +22,9 @@ if (File.Exists(envFile))
                 var key = parts[0].Trim();
                 var value = parts[1].Trim();
                 Environment.SetEnvironmentVariable(key, value);
-                Console.WriteLine($"Loaded: {key} = {(key.Contains("SECRET") ? "[HIDDEN]" : value)}");
             }
         }
     }
-}
-else
-{
-    Console.WriteLine(".env file NOT found!");
 }
 
 var client = new ExchangeRestClient();
@@ -40,10 +32,6 @@ var client = new ExchangeRestClient();
 // Configure API credentials from .env file
 var apiKey = Environment.GetEnvironmentVariable("KRAKEN_API_KEY");
 var apiSecret = Environment.GetEnvironmentVariable("KRAKEN_API_SECRET");
-
-Console.WriteLine($"API Key found: {!string.IsNullOrEmpty(apiKey)}");
-Console.WriteLine($"API Secret found: {!string.IsNullOrEmpty(apiSecret)}");
-Console.WriteLine();
 
 // Print enough newlines to "clear" the visible area
 Console.WriteLine(new string('\n', 20));
@@ -162,7 +150,8 @@ else if (choice == "3")
         Console.WriteLine("===============================================");
     }
     
-    Console.WriteLine("\nStarting price monitoring in 3 seconds...");
+    Console.WriteLine();
+    Console.WriteLine("Starting price monitoring in 3 seconds...");
     await Task.Delay(3000);
 }
 else
@@ -176,8 +165,9 @@ var symbols = new[]
     new { Name = "BTC", Symbol = new SharedSymbol(TradingMode.Spot, "BTC", "USD") },
     new { Name = "ETH", Symbol = new SharedSymbol(TradingMode.Spot, "ETH", "USD") },
     new { Name = "XRP", Symbol = new SharedSymbol(TradingMode.Spot, "XRP", "USD") },
-    new { Name = "SOL", Symbol = new SharedSymbol(TradingMode.Spot, "SOL", "USD") },
-    new { Name = "ADA", Symbol = new SharedSymbol(TradingMode.Spot, "ADA", "USD") }
+    new { Name = "LINK", Symbol = new SharedSymbol(TradingMode.Spot, "LINK", "USD") },
+    new { Name = "ALGO", Symbol = new SharedSymbol(TradingMode.Spot, "ALGO", "USD") },
+    new { Name = "BAT", Symbol = new SharedSymbol(TradingMode.Spot, "BAT", "USD") }
 };
 
 var logFile = "/home/trading/sisu/prices.csv";
@@ -188,8 +178,6 @@ if (!File.Exists(logFile))
     await File.WriteAllTextAsync(logFile, "timestamp,coin,low,last,high\n");
 }
 
-Console.WriteLine("Press Ctrl+C to stop...");
-Console.WriteLine();
 
 while (true)
 {
