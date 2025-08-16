@@ -8,159 +8,16 @@ using CryptoExchange.Net.SharedApis;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Authentication;
 
-// Load .env file
-var envFile = "/home/trading/sisu/.env";
-if (File.Exists(envFile))
-{
-    foreach (var line in File.ReadAllLines(envFile))
-    {
-        if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("#") && line.Contains("="))
-        {
-            var parts = line.Split('=', 2);
-            if (parts.Length == 2)
-            {
-                var key = parts[0].Trim();
-                var value = parts[1].Trim();
-                Environment.SetEnvironmentVariable(key, value);
-            }
-        }
-    }
-}
-
 var client = new ExchangeRestClient();
-
-// Configure API credentials from .env file
-var apiKey = Environment.GetEnvironmentVariable("KRAKEN_API_KEY");
-var apiSecret = Environment.GetEnvironmentVariable("KRAKEN_API_SECRET");
 
 // Print enough newlines to "clear" the visible area
 Console.WriteLine(new string('\n', 20));
 
+Console.WriteLine("===============================================");
+Console.WriteLine("        1-Minute Candlestick Monitor");
+Console.WriteLine("===============================================");
+Console.WriteLine("Starting 1-minute candlestick monitoring...");
 Console.WriteLine();
-
-// Ask user what they want to see
-Console.WriteLine("===============================================");
-Console.WriteLine("           Trading Program Options");
-Console.WriteLine("===============================================");
-Console.WriteLine("1. Show account balance only");
-Console.WriteLine("2. Monitor live prices only");
-Console.WriteLine("3. Show balance then monitor prices");
-Console.WriteLine("===============================================");
-Console.Write("Enter your choice (1, 2, or 3): ");
-
-var choice = Console.ReadLine();
-Console.WriteLine();
-
-if (choice == "1")
-{
-    // Show balance only and exit
-    if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
-    {
-        Console.WriteLine("Fetching account balance...");
-        
-        try
-        {
-            client.SetApiCredentials("Kraken", apiKey, apiSecret);
-            var balanceResult = await client.GetBalancesAsync(new GetBalancesRequest(), new[] { "Kraken" });
-            
-            Console.WriteLine("===============================================");
-            Console.WriteLine("            Account Balance");
-            Console.WriteLine("===============================================");
-            Console.WriteLine("Asset    |     Available      |       Total");
-            Console.WriteLine("---------|--------------------|-----------------");
-            
-            if (balanceResult.Any() && balanceResult.First().Success)
-            {
-                foreach (var balance in balanceResult.First().Data)
-                {
-                    Console.WriteLine($"{balance.Asset,-8} | {balance.Available,18:F8} | {balance.Total,15:F8}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("Error fetching balance");
-            }
-            Console.WriteLine("===============================================");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception getting balance: {ex.Message}");
-        }
-    }
-    else
-    {
-        Console.WriteLine("No API credentials found!");
-    }
-    return; // Exit program
-}
-else if (choice == "2")
-{
-    // Skip balance display, go straight to price monitoring
-    Console.WriteLine("Starting price monitoring...");
-}
-else if (choice == "3")
-{
-    // Show balance first, then continue to price monitoring
-    if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
-    {
-        Console.WriteLine("API credentials found. Fetching account balance...");
-        
-        try
-        {
-            client.SetApiCredentials("Kraken", apiKey, apiSecret);
-            var balanceResult = await client.GetBalancesAsync(new GetBalancesRequest(), new[] { "Kraken" });
-            
-            Console.WriteLine("===============================================");
-            Console.WriteLine("            Account Balance");
-            Console.WriteLine("===============================================");
-            Console.WriteLine("Asset    |     Available      |       Total");
-            Console.WriteLine("---------|--------------------|-----------------");
-            
-            if (balanceResult.Any())
-            {
-                var krakenResult = balanceResult.First();
-                if (krakenResult.Success)
-                {
-                    foreach (var balance in krakenResult.Data)
-                    {
-                        Console.WriteLine($"{balance.Asset,-8} | {balance.Available,18:F8} | {balance.Total,15:F8}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Balance fetch failed: {krakenResult.Error?.Message ?? "Unknown error"}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("No balance results returned");
-            }
-            Console.WriteLine("===============================================");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception getting balance: {ex.Message}");
-            Console.WriteLine("===============================================");
-        }
-    }
-    else
-    {
-        Console.WriteLine("===============================================");
-        Console.WriteLine("        No API Credentials Set");
-        Console.WriteLine("===============================================");
-        Console.WriteLine("Set KRAKEN_API_KEY and KRAKEN_API_SECRET");
-        Console.WriteLine("environment variables for balance data.");
-        Console.WriteLine("===============================================");
-    }
-    
-    Console.WriteLine();
-    Console.WriteLine("Starting price monitoring in 3 seconds...");
-    await Task.Delay(3000);
-}
-else
-{
-    Console.WriteLine("Invalid choice. Starting price monitoring...");
-}
 
 // Note: Kraken uses USD instead of USDT for most trading pairs
 var symbols = new[]
@@ -173,12 +30,12 @@ var symbols = new[]
     new { Name = "BAT", Symbol = new SharedSymbol(TradingMode.Spot, "BAT", "USD") }
 };
 
-var logFile = "/home/trading/sisu/prices.csv";
+var logFile = "/home/trading/1min/prices.csv";  // Updated path for 1min
 
 // Create CSV header if file doesn't exist
 if (!File.Exists(logFile))
 {
-    await File.WriteAllTextAsync(logFile, "timestamp,coin,low,last,high,variance\n");
+    await File.WriteAllTextAsync(logFile, "timestamp,coin,open,low,high,close,variance\n");
 }
 
 while (true)
@@ -187,39 +44,63 @@ while (true)
     var timestamp = startTime.ToString("yyyy-MM-dd HH:mm:ss");
     
     Console.WriteLine("\n\n");
-    Console.WriteLine("===========================================================");
-    Console.WriteLine($"    Crypto Trading     >>------<<          {DateTime.Now:h:mm:sstt}");
-    Console.WriteLine("===========================================================");
-    Console.WriteLine(" Coin |     Low     |     Last    |    High     | Variance");
-    Console.WriteLine("------|-------------|-------------|-------------|----------");
+    Console.WriteLine("=========================================================================");
+    Console.WriteLine($"   1-Min Candlesticks         {DateTime.Now:h:mm:sstt}           >>------<<");
+    Console.WriteLine("=========================================================================");
+    Console.WriteLine(" Coin |    Open     |     Low     |    High     |    Close    | Variance ");
+    Console.WriteLine("------|-------------|-------------|-------------|-------------|----------");
 
     foreach (var crypto in symbols)
     {
-        var results = await client.GetSpotTickerAsync(new GetTickerRequest(crypto.Symbol), new[] { "Kraken" });
-        
-        foreach (var result in results)
+        try
         {
-            if (result.Success)
+            // Get 1-minute candlestick data (last 2 candles to ensure we get a complete one)
+            var klineRequest = new GetKlinesRequest(crypto.Symbol, SharedKlineInterval.OneMinute);
+            klineRequest.Limit = 2; // Get last 2 candles
+            klineRequest.EndTime = DateTime.UtcNow;
+            
+            var klineResults = await client.GetKlinesAsync(klineRequest, new[] { "Kraken" });
+            
+            if (klineResults.Any() && klineResults.First().Success && klineResults.First().Data.Any())
             {
-                // Calculate variance: distance from Last to average of Low and High
-                var averagePrice = (result.Data.LowPrice + result.Data.HighPrice) / 2;
-                var variance = result.Data.LastPrice - averagePrice;
+                // Get the most recent completed candle (second to last, as the last one might be incomplete)
+                var candles = klineResults.First().Data.ToList();
+                var candle = candles.Count > 1 ? candles[candles.Count - 2] : candles.Last();
+                
+                var open = candle.OpenPrice;
+                var low = candle.LowPrice;
+                var high = candle.HighPrice;
+                var close = candle.ClosePrice;
+                var volume = candle.Volume;
+                
+                // Calculate variance: distance from close to middle of range
+                var midPrice = (low + high) / 2;
+                var variance = close - midPrice;
                 
                 // Display in table format
-                Console.WriteLine($"{crypto.Name,-5} | ${result.Data.LowPrice,10:F2} | ${result.Data.LastPrice,10:F2} | ${result.Data.HighPrice,10:F2} | ${variance,8:F2}");
+                Console.WriteLine($"{crypto.Name,-5} | ${open,10:F2} | ${low,10:F2} | ${high,10:F2} | ${close,10:F2} | ${variance,8:F2}");
                 
-                // Log to CSV file (including variance)
-                var csvLine = $"{timestamp},{crypto.Name},{result.Data.LowPrice:F2},{result.Data.LastPrice:F2},{result.Data.HighPrice:F2},{variance:F2}\n";
+                // Log to CSV file
+                var csvLine = $"{timestamp},{crypto.Name},{open:F2},{low:F2},{high:F2},{close:F2},{variance:F2}\n";
                 await File.AppendAllTextAsync(logFile, csvLine);
             }
             else
             {
-                Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-10} | {"Error",-8}");
+                Console.WriteLine($"{crypto.Name,-5} | {"Error",-10} | {"Error",-10} | {"Error",-10} | {"Error",-10} | {"Error",-8}");
                 
                 // Add error logging
-                var errorLog = $"{timestamp},ERROR,{crypto.Name},{result.Error?.Message ?? "Unknown error"}\n";
-                await File.AppendAllTextAsync("/home/trading/sisu/errors.log", errorLog);
+                var errorMessage = klineResults.FirstOrDefault()?.Error?.Message ?? "No candlestick data available";
+                var errorLog = $"{timestamp},ERROR,{crypto.Name},{errorMessage}\n";
+                await File.AppendAllTextAsync("/home/trading/1min/errors.log", errorLog);
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{crypto.Name,-5} | {"Exception",-10} | {"Exception",-10} | {"Exception",-10} | {"Exception",-10} | {"Exception",-8}");
+            
+            // Add exception logging
+            var errorLog = $"{timestamp},EXCEPTION,{crypto.Name},{ex.Message}\n";
+            await File.AppendAllTextAsync("/home/trading/1min/errors.log", errorLog);
         }
     }
     
@@ -233,5 +114,9 @@ while (true)
     if (remainingTime.TotalMilliseconds > 0)
     {
         await Task.Delay(remainingTime);
+    }
+    else
+    {
+        Console.WriteLine("API calls took longer than 1 minute, updating immediately...");
     }
 }

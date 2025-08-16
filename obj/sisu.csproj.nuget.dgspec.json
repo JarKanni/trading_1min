@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/trading/sisu/sisu.csproj": {}
+    "/home/trading/1min/sisu.csproj": {}
   },
   "projects": {
-    "/home/trading/sisu/sisu.csproj": {
+    "/home/trading/1min/sisu.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/trading/sisu/sisu.csproj",
+        "projectUniqueName": "/home/trading/1min/sisu.csproj",
         "projectName": "sisu",
-        "projectPath": "/home/trading/sisu/sisu.csproj",
+        "projectPath": "/home/trading/1min/sisu.csproj",
         "packagesPath": "/home/peachy/.nuget/packages/",
-        "outputPath": "/home/trading/sisu/obj/",
+        "outputPath": "/home/trading/1min/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/peachy/.nuget/NuGet/NuGet.Config"
