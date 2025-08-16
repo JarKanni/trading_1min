@@ -66,12 +66,14 @@ if (choice == "1")
             Console.WriteLine("===============================================");
             Console.WriteLine("            Account Balance");
             Console.WriteLine("===============================================");
+            Console.WriteLine("Asset    |     Available      |       Total");
+            Console.WriteLine("---------|--------------------|-----------------");
             
             if (balanceResult.Any() && balanceResult.First().Success)
             {
                 foreach (var balance in balanceResult.First().Data)
                 {
-                    Console.WriteLine($"{balance.Asset,-8} | {balance.Available,15:F8} | {balance.Total,15:F8}");
+                    Console.WriteLine($"{balance.Asset,-8} | {balance.Available,18:F8} | {balance.Total,15:F8}");
                 }
             }
             else
@@ -111,16 +113,17 @@ else if (choice == "3")
             Console.WriteLine("===============================================");
             Console.WriteLine("            Account Balance");
             Console.WriteLine("===============================================");
+            Console.WriteLine(" Coin    |     Available      |       Total");
+            Console.WriteLine("---------|--------------------|-----------------");
             
             if (balanceResult.Any())
             {
                 var krakenResult = balanceResult.First();
                 if (krakenResult.Success)
                 {
-                    Console.WriteLine("Balance fetch successful!");
                     foreach (var balance in krakenResult.Data)
                     {
-                        Console.WriteLine($"{balance.Asset,-8} | {balance.Available,15:F8} | {balance.Total,15:F8}");
+                        Console.WriteLine($"{balance.Asset,-8} | {balance.Available,18:F8} | {balance.Total,15:F8}");
                     }
                 }
                 else
@@ -179,10 +182,12 @@ if (!File.Exists(logFile))
 }
 
 
+
+
 while (true)
 {
-    var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
+    var startTime = DateTime.Now;
+    var timestamp = startTime.ToString("yyyy-MM-dd HH:mm:ss");
     Console.WriteLine("\n\n");
     Console.WriteLine("===============================================");
     Console.WriteLine($"    Crypto Trading     >>-----<<     {DateTime.Now:h:mm:sstt}");
@@ -214,5 +219,14 @@ while (true)
     
     Console.WriteLine();
     
-    await Task.Delay(20000); // Wait 20 seconds
+    // for 1 minute bars
+    // Calculate how long the API calls took
+    var elapsed = DateTime.Now - startTime;
+    var remainingTime = TimeSpan.FromMinutes(1) - elapsed;
+    
+    // Only delay if there's time remaining
+    if (remainingTime.TotalMilliseconds > 0)
+    {
+        await Task.Delay(remainingTime);
+    }
 }
