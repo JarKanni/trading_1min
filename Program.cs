@@ -213,8 +213,6 @@ while (true)
     }
     
     Console.WriteLine();
-    Console.WriteLine($"Data logged.");
-    Console.WriteLine("Press Ctrl+C to stop...");
     
     await Task.Delay(20000); // Wait 20 seconds
 }
