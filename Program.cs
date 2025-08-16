@@ -7,6 +7,8 @@ using CryptoClients.Net.Interfaces;
 using CryptoExchange.Net.SharedApis;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Authentication;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 // Load .env file
 var envFile = "/home/trading/sisu/.env";
@@ -28,6 +30,15 @@ if (File.Exists(envFile))
 }
 
 var client = new ExchangeRestClient();
+
+// Configure file logging
+var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddFile("/home/trading/sisu/logs/trading_{Date}.log")
+           .SetMinimumLevel(LogLevel.Debug);
+});
+
+client.SetLogger(loggerFactory.CreateLogger<ExchangeRestClient>());
 
 // Configure API credentials from .env file
 var apiKey = Environment.GetEnvironmentVariable("KRAKEN_API_KEY");

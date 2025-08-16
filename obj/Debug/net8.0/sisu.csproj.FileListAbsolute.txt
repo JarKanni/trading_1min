@@ -259,3 +259,5 @@ X:/trading/sisu/obj/Debug/net8.0/sisu.sourcelink.json
 /home/trading/sisu/bin/Debug/net8.0/Common.Logging.dll
 /home/trading/sisu/bin/Debug/net8.0/Common.Logging.Core.dll
 /home/trading/sisu/bin/Debug/net8.0/LukeSkywalker.IPNetwork.dll
+/home/trading/sisu/bin/Debug/net8.0/Microsoft.Extensions.Logging.Configuration.dll
+/home/trading/sisu/bin/Debug/net8.0/Microsoft.Extensions.Logging.Console.dll
