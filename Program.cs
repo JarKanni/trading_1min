@@ -48,61 +48,127 @@ Console.WriteLine();
 // Print enough newlines to "clear" the visible area
 Console.WriteLine(new string('\n', 20));
 
-if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
+Console.WriteLine();
+
+// Ask user what they want to see
+Console.WriteLine("===============================================");
+Console.WriteLine("           Trading Program Options");
+Console.WriteLine("===============================================");
+Console.WriteLine("1. Show account balance only");
+Console.WriteLine("2. Monitor live prices only");
+Console.WriteLine("3. Show balance then monitor prices");
+Console.WriteLine("===============================================");
+Console.Write("Enter your choice (1, 2, or 3): ");
+
+var choice = Console.ReadLine();
+Console.WriteLine();
+
+if (choice == "1")
 {
-    Console.WriteLine("API credentials found. Fetching account balance...");
-    
-    try
+    // Show balance only and exit
+    if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
     {
-        // Set credentials for Kraken
-        client.SetApiCredentials("Kraken", apiKey, apiSecret);
+        Console.WriteLine("Fetching account balance...");
         
-        // Get account balance once at startup
-        var balanceResult = await client.GetBalancesAsync(new GetBalancesRequest(), new[] { "Kraken" });
-        
-        Console.WriteLine("===============================================");
-        Console.WriteLine("            Account Balance");
-        Console.WriteLine("===============================================");
-        
-        if (balanceResult.Any())
+        try
         {
-            var krakenResult = balanceResult.First();
-            if (krakenResult.Success)
+            client.SetApiCredentials("Kraken", apiKey, apiSecret);
+            var balanceResult = await client.GetBalancesAsync(new GetBalancesRequest(), new[] { "Kraken" });
+            
+            Console.WriteLine("===============================================");
+            Console.WriteLine("            Account Balance");
+            Console.WriteLine("===============================================");
+            
+            if (balanceResult.Any() && balanceResult.First().Success)
             {
-                Console.WriteLine("Balance fetch successful!");
-                foreach (var balance in krakenResult.Data)
+                foreach (var balance in balanceResult.First().Data)
                 {
                     Console.WriteLine($"{balance.Asset,-8} | {balance.Available,15:F8} | {balance.Total,15:F8}");
                 }
             }
             else
             {
-                Console.WriteLine($"Balance fetch failed: {krakenResult.Error?.Message ?? "Unknown error"}");
+                Console.WriteLine("Error fetching balance");
             }
+            Console.WriteLine("===============================================");
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("No balance results returned");
+            Console.WriteLine($"Exception getting balance: {ex.Message}");
         }
-        Console.WriteLine("===============================================");
     }
-    catch (Exception ex)
+    else
     {
-        Console.WriteLine($"Exception getting balance: {ex.Message}");
+        Console.WriteLine("No API credentials found!");
+    }
+    return; // Exit program
+}
+else if (choice == "2")
+{
+    // Skip balance display, go straight to price monitoring
+    Console.WriteLine("Starting price monitoring...");
+}
+else if (choice == "3")
+{
+    // Show balance first, then continue to price monitoring
+    if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(apiSecret))
+    {
+        Console.WriteLine("API credentials found. Fetching account balance...");
+        
+        try
+        {
+            client.SetApiCredentials("Kraken", apiKey, apiSecret);
+            var balanceResult = await client.GetBalancesAsync(new GetBalancesRequest(), new[] { "Kraken" });
+            
+            Console.WriteLine("===============================================");
+            Console.WriteLine("            Account Balance");
+            Console.WriteLine("===============================================");
+            
+            if (balanceResult.Any())
+            {
+                var krakenResult = balanceResult.First();
+                if (krakenResult.Success)
+                {
+                    Console.WriteLine("Balance fetch successful!");
+                    foreach (var balance in krakenResult.Data)
+                    {
+                        Console.WriteLine($"{balance.Asset,-8} | {balance.Available,15:F8} | {balance.Total,15:F8}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Balance fetch failed: {krakenResult.Error?.Message ?? "Unknown error"}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("No balance results returned");
+            }
+            Console.WriteLine("===============================================");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception getting balance: {ex.Message}");
+            Console.WriteLine("===============================================");
+        }
+    }
+    else
+    {
+        Console.WriteLine("===============================================");
+        Console.WriteLine("        No API Credentials Set");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("Set KRAKEN_API_KEY and KRAKEN_API_SECRET");
+        Console.WriteLine("environment variables for balance data.");
         Console.WriteLine("===============================================");
     }
+    
+    Console.WriteLine("\nStarting price monitoring in 3 seconds...");
+    await Task.Delay(3000);
 }
 else
 {
-    Console.WriteLine("===============================================");
-    Console.WriteLine("        No API Credentials Set");
-    Console.WriteLine("===============================================");
-    Console.WriteLine("Set KRAKEN_API_KEY and KRAKEN_API_SECRET");
-    Console.WriteLine("environment variables for balance data.");
-    Console.WriteLine("===============================================");
+    Console.WriteLine("Invalid choice. Starting price monitoring...");
 }
-
-Console.WriteLine();
 
 // Note: Kraken uses USD instead of USDT for most trading pairs
 var symbols = new[]
@@ -122,11 +188,14 @@ if (!File.Exists(logFile))
     await File.WriteAllTextAsync(logFile, "timestamp,coin,low,last,high\n");
 }
 
+Console.WriteLine("Press Ctrl+C to stop...");
+Console.WriteLine();
+
 while (true)
 {
     var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-    
-    Console.WriteLine("\n\n\n");
+
+    Console.WriteLine("\n\n");
     Console.WriteLine("===============================================");
     Console.WriteLine($"    Crypto Trading     >>-----<<     {DateTime.Now:h:mm:sstt}");
     Console.WriteLine("===============================================");
