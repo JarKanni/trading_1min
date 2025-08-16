@@ -1,3 +1,3 @@
-# Trading Sisu
+# Crypto One Minute Logger
 
-Testbed for CryptoClient.Net trading algorithm development in C#
+Logs 1 minute bars on Crypto using Kraken and CryptoClient.Net
